@@ -5,23 +5,38 @@ import type { UserTypes } from './types/UserTypes';
 
 function App() {
 
+  const backendUrl=import.meta.env.VITE_BACKEND_PUBLIC_URL;
+  
 
   const [name, setName] = useState<string>("");
   const [age, setAge] = useState<number>(0);
   const [message, setMessage] = useState<string>("");
   const [users, setUsers] = useState<UserTypes[]>([]);
 
-  const loadUsers = async () => {
-    try {
-      const response = await axios.get('http://localhost:8080/users');
-      setUsers(response.data);
-      console.log(response.data);
-      setMessage('Users loaded successfully!');
+  console.log(message);
+  
 
-    } catch (error) {
-      console.log("User loading error", error);
+ const loadUsers = async () => {
+  try {
+    const response = await axios.get(`${backendUrl}/users`);
+
+    // Corrected check: Check if response.data is an array
+    if (Array.isArray(response.data)) {
+      setUsers(response.data);
+      console.log(response.data); // Log the correct data
+      setMessage('Users loaded successfully!');
+    } else {
+      console.error("API response is not an array:", response.data);
+      setUsers([]); // Fallback to an empty array to prevent the error
+      setMessage('Error: Incorrect data format from server.');
     }
-  };
+
+  } catch (error) {
+    console.log("User loading error", error);
+    setMessage('Failed to connect to the server.');
+    setUsers([]); // Ensure users is an empty array on error
+  }
+};
 
   const [editUser, setEditUser] = useState<UserTypes | null>(null);
 
@@ -33,7 +48,7 @@ function App() {
 
   const handleUpdate = async () => {
     try {
-      await axios.put(`http://localhost:8080/users/${editUser?.id}`, {
+      await axios.put(`${backendUrl}/users/${editUser?.id}`, {
         name: name,
         age: age
       });
@@ -51,7 +66,7 @@ function App() {
 
   const deleteUser = async (id: string) => {
     try {
-      await axios.delete(`http://localhost:8080/users/${id}`);
+      await axios.delete(`${backendUrl}/users/${id}`);
 
 
 
@@ -65,14 +80,16 @@ function App() {
 
 
   useEffect(() => {
+    console.log(backendUrl);
     loadUsers();
+
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
-      const response = await axios.post('http://localhost:8080/users', {
+      const response = await axios.post(`${backendUrl}/users`, {
         name: name,
         age: age
       });
